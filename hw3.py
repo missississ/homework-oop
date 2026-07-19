@@ -1,3 +1,59 @@
+class Student:
+    def __init__(self, name, surname, gender):
+        self.name = name
+        self.surname = surname
+        self.gender = gender
+        self.finished_courses = []
+        self.courses_in_progress = []
+        self.grades = {}
+
+    def rate_lecture(self, lecturer, course, grade):
+        if not isinstance(lecturer, Lecturer):
+            return "Ошибка"
+        if course not in lecturer.courses_attached:
+            return "Ошибка"
+        if course not in self.courses_in_progress:
+                return 'Ошибка'
+        if not (0 <= grade <= 10):
+            return 'Ошибка: оценка должна быть от 0 до 10'
+
+        lecturer.grades.setdefault(course, []).append(grade)
+        return None
+    
+    def avg_hw_grade(self):
+        all_grades = []
+        for grades_list in self.grades.values():
+            all_grades.extend(grades_list)
+        if not all_grades:
+            return 0.0
+        return sum(all_grades) / len(all_grades)
+    
+    def __eq__(self, other):
+        if not isinstance(other, Student):
+            return NotImplemented
+        return self.avg_hw_grade() == other.avg_hw_grade()
+    
+    def __lt__(self, other):
+        if not isinstance(other, Student):
+            return NotImplemented
+        return self.avg_hw_grade() < other.avg_hw_grade()
+    
+    def __gt__(self, other):
+        if not isinstance(other, Student):
+            return NotImplemented
+        return self.avg_hw_grade() > other.avg_hw_grade()
+    
+    def __str__(self):
+        avg = self.avg_hw_grade()
+        courses_in_progress_str = ", ".join(self.courses_in_progress) if self.courses_in_progress else "Нет"
+        finished_courses_str = ", ".join(self.finished_courses) if self.finished_courses else "Нет"
+
+        return (f"Имя: {self.name}\n"
+                f"Фамилия: {self.surname}\n"
+                f"Средняя оценка за домашние задания: {avg:.1f}\n"
+                f"Курсы в процессе изучения: {courses_in_progress_str}\n"
+                f"Завершенные курсы: {finished_courses_str}")
+
 class Mentor:
     def __init__(self, name, surname):
         self.name = name
@@ -51,67 +107,19 @@ class Reviewer(Mentor):
         self.reviews_count = 0
 
     def rate_hw(self, student, course, grade):
-        result = super().rate_hw(student, course, grade)
-        if result != 'Ошибка':
+        if isinstance(student, Student) and course in self.courses_attached and course in student.courses_in_progress:
+            if course in student.grades:
+                student.grades[course].append(grade)
+            else:
+                student.grades[course] = [grade]
+
             self.reviews_count += 1
-        return result
+            return None
+        else:
+            return 'Ошибка'
+        
     def __str__(self):
         return f"Имя {self.name}\nФамилия: {self.surname}"
-class Student:
-    def __init__(self, name, surname, gender):
-        self.name = name
-        self.surname = surname
-        self.gender = gender
-        self.finished_courses = []
-        self.courses_in_progress = []
-        self.grades = {}
-
-    def rate_lecture(self, lecturer, course, grade):
-        if not isinstance(lecturer, Lecturer):
-            return "Ошибка"
-        if course not in lecturer.courses_attached:
-            return "Ошибка"
-        if course not in self.courses_in_progress:
-                return 'Ошибка'
-        if not (0 <= grade <= 10):
-            return 'Ошибка: оценка должна быть от 0 до 10'
-
-        lecturer.grades.setdefault(course, []).append(grade)
-        return None
-    
-    def avg_hw_grade(self):
-        all_grades = []
-        for grades_list in self.grades.values():
-            all_grades.extend(grades_list)
-        if not all_grades:
-            return 0.0
-        return sum(all_grades) / len(all_grades)
-    
-    def __eq__(self, other):
-        if not isinstance(other, Student):
-            return NotImplemented
-        return self.avg_hw_grade() == other.avg_hw_grade()
-    
-    def __lt__(self, other):
-        if not isinstance(other, Student):
-            return NotImplemented
-        return self.avg_hw_grade() < other.avg_hw_grade()
-    
-    def __gt__(self, other):
-        if not isinstance(other, Student):
-            return NotImplemented
-        return self.avg_hw_grade() > other.avg_hw_grade()
-    
-    def __str__(self):
-        avg = self.avg_hw_grade()
-        self.courses_in_progress_str = ", ".join(self.courses_in_progress) if self.courses_in_progress else "Нет"
-        self.finished_courses_str = ", ".join(self.finished_courses) if self.finished_courses else "Нет"
-
-        return (f"Имя: {self.name}\n"
-                f"Фамилия: {self.surname}\n"
-                f"Средняя оценка за домашние задания: {avg:.1f}\n"
-                f"Курсы в процессе изучения: {self.courses_in_progress_str}\n"
-                f"Завершенные курсы: {self.finished_courses_str}")
 
 lecturer = Lecturer('Иван', 'Иванов')
 reviewer = Reviewer('Пётр', 'Петров')
